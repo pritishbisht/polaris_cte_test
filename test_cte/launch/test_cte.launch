@@ -1,0 +1,17 @@
+<launch>
+    <!-- Launch Gazebo in headless mode without GUI -->
+    <include file="$(find gazebo_ros)/launch/gem_gazebo_rviz.launch">
+        <arg name="gui" value="false"/>
+        <arg name="use_rviz" value="false" />
+        <!-- <arg name="paused" value="false"/> -->
+    </include>
+
+    <!-- Launch the Pure Pursuit controller with a test duration -->
+    <node name="pure_pursuit_node" pkg="test_cte" type="pure_pursuit_sim_updated.py" output="screen">
+        <param name="duration" value="30" />
+    </node>
+
+    <!-- Test node to validate pure pursuit behavior -->
+    <test test-name="pure_pursuit_test" pkg="test_cte" type="test_pure_pursuit.py" />
+</launch>
+
