@@ -41,17 +41,37 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+stage('Build or Pull Docker Image') {
             steps {
                 container('docker') {
                     script {
-                        echo "Building Docker image with tags: ${TAG_LATEST} and ${TAG_BUILD}"
-                        try {
-                            // Build and tag the image
-                            // sh 'docker build -t $TAG_LATEST -t $TAG_BUILD .'
-                            sh 'docker build -t $TAG_LATEST .'
-                        } catch (Exception e) {
-                            error "Failed to build Docker image: ${e.message}"
+                        // Check if Dockerfile has changed
+                        def dockerfileChanged = sh(
+                            script: 'git diff --name-only HEAD~1 HEAD | grep -q Dockerfile && echo "yes" || echo "no"',
+                            returnStdout: true
+                        ).trim() == 'yes'
+                        
+                        // Check if latest image exists in Docker repository
+                        def imageExists = sh(
+                            script: "docker manifest inspect ${TAG_LATEST} > /dev/null 2>&1 && echo 'yes' || echo 'no'",
+                            returnStdout: true
+                        ).trim() == 'yes'
+                        
+                        // Decision-making based on Dockerfile changes and image existence
+                        if (dockerfileChanged || !imageExists) {
+                            echo "Dockerfile changed or no existing image found. Building Docker image."
+                            try {
+                                sh "docker build -t ${TAG_LATEST} -t ${TAG_BUILD} ."
+                            } catch (Exception e) {
+                                error "Failed to build Docker image: ${e.message}"
+                            }
+                        } else {
+                            echo "No change in Dockerfile and latest image exists. Pulling Docker image."
+                            try {
+                                sh "docker pull ${TAG_LATEST}"
+                            } catch (Exception e) {
+                                error "Failed to pull Docker image: ${e.message}"
+                            }
                         }
                     }
                 }
@@ -60,12 +80,14 @@ pipeline {
         
         stage('Start Container and Copy Test Package') {
             steps {
-                script {
-                    // Start the container if it's not already running
-                    sh 'docker run -itd --name ${CONTAINER_NAME} ${TAG_LATEST} || echo "Container already running"'
+                container('docker') {
+                    script {
+                        // Start the container if it's not already running
+                        sh 'docker run -itd --name ${CONTAINER_NAME} ${TAG_LATEST} || echo "Container already running"'
 
-                    // Copy the test package into the running container
-                    sh 'docker cp ./test_cte $CONTAINER_NAME:/root/polaris_gem_ws/src'
+                        // Copy the test package into the running container
+                        sh 'docker cp ./test_cte $CONTAINER_NAME:/root/polaris_gem_ws/src'
+                    }
                 }
             }
         }
