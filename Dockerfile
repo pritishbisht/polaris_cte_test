@@ -29,7 +29,7 @@ RUN rosdep init && rosdep update && \
     mkdir -p $GEM_WS/src
 
 # Clone the POLARIS_GEM_e2 repository
-RUN git clone https://gitlab.engr.illinois.edu/gemillins/POLARIS_GEM_e2.git $GEM_WS/src/POLARIS_GEM_e2
+RUN git clone https://gitlab.engr.illinois.edu/gemillins/POLARIS_GEM_e2.git $GEM_WS/src
 
 # Build the Catkin workspace
 WORKDIR $GEM_WS
