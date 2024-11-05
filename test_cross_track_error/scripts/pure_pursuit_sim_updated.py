@@ -30,6 +30,7 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 # Gazebo Headers
 from gazebo_msgs.srv import GetModelState
+from gazebo_msgs.msg import ModelState
 from std_msgs.msg import String, Float32  # Add Float32 for publishing continuous cross-track error
 
 class PurePursuit(object):

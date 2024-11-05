@@ -7,7 +7,7 @@ import unittest
 class CrossTrackErrorTest(unittest.TestCase):
     def setUp(self):
         # Initialize the ROS node for testing
-        rospy.init_node('cross_track_error_test_node', anonymous=True)
+        rospy.init_node('cross_track_error_test', anonymous=True)
 
         # Define acceptable error threshold and test duration from parameters
         self.error_threshold = rospy.get_param("~error_threshold", 1.0)
@@ -43,4 +43,4 @@ class CrossTrackErrorTest(unittest.TestCase):
 
 if __name__ == '__main__':
     import rostest
-    rostest.rosrun('your_package_name', 'cross_track_error_test', CrossTrackErrorTest)
+    rostest.rosrun('test_cross_track_error', 'cross_track_error_test', CrossTrackErrorTest)
