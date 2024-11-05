@@ -33,6 +33,7 @@ pipeline {
         CONTAINER_NAME = "test_sim_container"
         TEST_DURATION = "${params.DURATION}"
         ERROR_THRESHOLD = "${params.ERROR_THRESHOLD}"
+        imageBuilt = false
     }
 
     stages {
@@ -69,6 +70,7 @@ pipeline {
                         // Decide whether to build or pull the Docker image based on conditions
                         if (dockerfileChanged || !imageExists) {
                             echo "Dockerfile changed in the latest commit or no existing image found. Building Docker image."
+                            imageBuilt = true
                             try {
                                 // Build the Docker image with both tags (latest and build-specific)
                                 sh "docker build -t ${TAG_LATEST} -t ${TAG_BUILD} ."
@@ -116,7 +118,7 @@ pipeline {
         
         stage('Push Docker Image') {
             when {
-                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+                expression { imageBuilt == true && (currentBuild.result == null || currentBuild.result == 'SUCCESS') }
             }
             steps {
                 container('docker') {
