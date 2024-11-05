@@ -160,7 +160,7 @@ pipeline {
                       "Check details at: ${env.BUILD_URL}"
         }
         failure {
-            echo 'Pipeline failed due to unacceptable cross-track error.'
+            echo 'Pipeline failed!'
             mail to: "${params.EMAIL_RECIPIENTS}",
                 subject: "Jenkins Build FAILURE - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "The build failed.\n\n" +
