@@ -2,13 +2,13 @@
 
 #================================================================
 # File name: pure_pursuit_sim.py                                                                  
-# Description: pure pursuit controller for GEM vehicle in Gazebo                                                              
+# Description: pure pursuit controller for GEM vehicle in Gazebo with result publishing                                                                 
 # Author: Hang Cui
 # Email: hangcui3@illinois.edu                                                                     
 # Date created: 07/10/2021                                                                
 # Date last modified: 07/15/2021                                                          
-# Version: 0.3                                                                    
-# Usage: rosrun gem_pure_pursuit_sim pure_pursuit_sim.py _duration:=45                                                                    
+# Version: 0.2                                                                    
+# Usage: rosrun gem_pure_pursuit_sim pure_pursuit_sim.py _duration:=30                                                                   
 # Python version: 3.8                                                             
 #================================================================
 
@@ -19,25 +19,31 @@ import math
 import numpy as np
 from numpy import linalg as la
 import time
+
+# ROS Headers
 import rospy
 from ackermann_msgs.msg import AckermannDrive
+from geometry_msgs.msg import Twist, Vector3
 from geometry_msgs.msg import PoseStamped
-from tf.transformations import euler_from_quaternion
+from sensor_msgs.msg import LaserScan
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+
+# Gazebo Headers
 from gazebo_msgs.srv import GetModelState
+from std_msgs.msg import String, Float32  # Add Float32 for publishing continuous cross-track error
 
 class PurePursuit(object):
     
     def __init__(self, duration):
-
         self.rate = rospy.Rate(20)
-        self.duration = duration  # Duration parameter from user
+        self.duration = duration
 
         self.look_ahead = 6    # meters
         self.wheelbase  = 1.75 # meters
         self.goal       = 0
-        self.cross_track_errors = []  # List to store cross-track errors
 
-        self.read_waypoints() # read waypoints
+
+        self.read_waypoints()  # read waypoints
 
         self.ackermann_msg = AckermannDrive()
         self.ackermann_msg.steering_angle_velocity = 0.0
@@ -46,12 +52,14 @@ class PurePursuit(object):
         self.ackermann_msg.speed                   = 0.0 
         self.ackermann_msg.steering_angle          = 0.0
 
+        # Publisher for Ackermann drive commands
         self.ackermann_pub = rospy.Publisher('/gem/ackermann_cmd', AckermannDrive, queue_size=1)
 
+        # New publisher for continuous cross-track error
+        self.ct_error_pub = rospy.Publisher('/pure_pursuit/cross_track_error', Float32, queue_size=1)
 
     # import waypoints.csv into a list (path_points)
     def read_waypoints(self):
-
         dirname  = os.path.dirname(__file__)
         filename = os.path.join(dirname, '../waypoints/wps.csv')
 
@@ -72,11 +80,9 @@ class PurePursuit(object):
     def find_angle(self, v1, v2):
         cosang = np.dot(v1, v2)
         sinang = la.norm(np.cross(v1, v2))
-        # [-pi, pi]
         return np.arctan2(sinang, cosang)
 
     def get_gem_pose(self):
-
         rospy.wait_for_service('/gazebo/get_model_state')
         
         try:
@@ -144,8 +150,8 @@ class PurePursuit(object):
 
             print("Crosstrack Error: " + str(ct_error))
 
-            # Store cross-track error for final evaluation
-            self.cross_track_errors.append(ct_error)
+            # Publish cross-track error
+            self.ct_error_pub.publish(ct_error)  
 
             # implement constant pure pursuit controller
             self.ackermann_msg.speed          = 2.8
@@ -154,19 +160,12 @@ class PurePursuit(object):
 
             self.rate.sleep()
 
-        # Evaluate cross-track error after specified duration
-        if all(abs(error) < 1.0 for error in self.cross_track_errors):
-            print("Pass: All cross-track errors were within ±1.0 meters")
-        else:
-            print("Fail: Some cross-track errors exceeded ±1.0 meters")
+        # Signal shutdown once the duration is complete
+        rospy.signal_shutdown("Duration complete")
 
 def pure_pursuit():
-
     rospy.init_node('pure_pursuit_sim_node', anonymous=True)
-
-    # Retrieve the duration from ROS parameter, defaulting to 45 if not set
-    duration = rospy.get_param('~duration', 45)
-
+    duration = rospy.get_param('~duration', 30)
     pp = PurePursuit(duration)
 
     try:

@@ -86,7 +86,7 @@ stage('Build or Pull Docker Image') {
                         sh 'docker run -itd --name ${CONTAINER_NAME} ${TAG_LATEST} || echo "Container already running"'
 
                         // Copy the test package into the running container
-                        sh 'docker cp ./test_cte $CONTAINER_NAME:/root/polaris_gem_ws/src'
+                        sh 'docker cp ./test_cross_track_error $CONTAINER_NAME:/root/polaris_gem_ws/src'
                     }
                 }
             }
@@ -116,7 +116,7 @@ stage('Build or Pull Docker Image') {
             steps {
                 script {
                     // Assuming a ROS test package, source ROS setup and launch the test
-                    sh 'source /opt/ros/noetic/setup.bash && roslaunch test_cte test_cte.launch'
+                    sh 'source /opt/ros/noetic/setup.bash && roslaunch test_cross_track_error test_cross_track_error.launch'
                 }
             }
         }

@@ -1,31 +1,20 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(test_cte)
+project(test_cross_track_error)
 
+## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
-    rospy
-    roscpp
-    std_msgs
-    geometry_msgs
-    ackermann_msgs
-    gazebo_msgs
-    tf
-    rostest
+  rospy
+  std_msgs
+  rostest
 )
 
+## Declare a catkin package
 catkin_package()
 
-include_directories(
-    ${catkin_INCLUDE_DIRS}
-)
+## Specify additional locations of header files
+include_directories(${catkin_INCLUDE_DIRS})
 
-# Install the launch and test files
-install(DIRECTORY launch tests
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-        FILES_MATCHING PATTERN "*.launch" PATTERN "*.py" PATTERN "*.csv")
-
-# Add rostest
-if (CATKIN_ENABLE_TESTING)
-    find_package(rostest REQUIRED)
-    add_rostest(launch/test_cte.launch)
+## Add rostest
+if(CATKIN_ENABLE_TESTING)
+  add_rostest(test/pure_pursuit_cte_test.test)
 endif()
-

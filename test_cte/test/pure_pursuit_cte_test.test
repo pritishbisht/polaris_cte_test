@@ -1,0 +1,25 @@
+<launch>
+    <!-- Include the GEM Gazebo and RViz Launch File -->
+    <include file="$(find gem_gazebo)/launch/gem_gazebo_rviz.launch">
+        <arg name="velodyne_points" value="true" />
+        <arg name="gui" value="false" />
+        <arg name="use_rviz" value="false" />
+    </include>
+
+    <!-- Common parameters -->
+    <arg name="duration" default="30" />
+    <arg name="error_threshold" default="1.0" />
+
+    <!-- Pure Pursuit Simulation Node -->
+    <node name="pure_pursuit_node" pkg="test_cross_track_error" type="pure_pursuit_sim_updated.py" output="screen">
+        <!-- Pass the duration parameter -->
+        <param name="duration" value="$(arg duration)" />
+    </node>
+
+    <!-- Cross-Track Error Test Node -->
+    <test test-name="cross_track_error_evaluation_test" pkg="test_cross_track_error" type="ct_error_evaluation_test.py">
+        <!-- Pass the duration and error_threshold parameters -->
+        <param name="duration" value="$(arg duration)" />
+        <param name="error_threshold" value="$(arg error_threshold)" />
+    </test>
+</launch>

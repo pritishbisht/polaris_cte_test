@@ -1,36 +1,43 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>test_cte</name>
-  <version>0.1.0</version>
-  <description>Test package for cross-track error in Pure Pursuit simulation</description>
-
-  <maintainer email="pritishbisht@gmail.com">Pritish</maintainer>
+  <name>test_cross_track_error</name>
+  <version>1.0.0</version>
+  <description> The test_cross_track_error package </description>
+  <author email="hangcui1201@gmail.com">Hang Cui</author>
+  <maintainer email="hangcui1201@gmail.com"> Hang Cui </maintainer>
+  <url type="repository">https://github.com/hangcui1201/POLARIS_GEM_e2.git</url>
   <license>BSD</license>
-
-  <!-- ROS dependencies -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>rospy</build_depend>
+  <build_depend>cv_bridge</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>ackermann_msgs</build_depend>
-  <build_depend>gazebo_msgs</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>rostest</build_depend>
-  
-  <exec_depend>rospy</exec_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_export_depend>cv_bridge</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>ackermann_msgs</build_export_depend>
+  <build_export_depend>nav_msgs</build_export_depend>  
+  <build_export_depend>visualization_msgs</build_export_depend>  
+  <exec_depend>cv_bridge</exec_depend>
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>ackermann_msgs</exec_depend>
-  <exec_depend>gazebo_msgs</exec_depend>
-  <exec_depend>tf</exec_depend>
-  <exec_depend>rostest</exec_depend>
-
-  <!-- Dependency on the main package for running pure_pursuit_sim.py -->
-  <depend>gem_pure_pursuit_sim</depend>
-
+  <exec_depend>nav_msgs</exec_depend>  
+  <exec_depend>visualization_msgs</exec_depend>
+    
+  <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <!-- Export specific information for build systems -->
+  	<!-- Other tools can request additional information be placed here -->
   </export>
 </package>
