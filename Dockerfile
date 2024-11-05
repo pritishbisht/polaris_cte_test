@@ -3,8 +3,7 @@ FROM ros:noetic-ros-core
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8 \
-    GEM_WS=/root/polaris_gem_ws
+    LANG=C.UTF-8
 
 # Install necessary packages, including specified ROS packages
 RUN apt-get update && \
@@ -25,20 +24,25 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Initialize rosdep and create Catkin workspace
-RUN rosdep init && rosdep update && \
-    mkdir -p $GEM_WS/src
+RUN rosdep init && \
+    rosdep update && \
+    mkdir -p /root/gem_ws/src
+WORKDIR /root/gem_ws
 
 # Clone the POLARIS_GEM_e2 repository
-RUN git clone https://gitlab.engr.illinois.edu/gemillins/POLARIS_GEM_e2.git $GEM_WS/src
+RUN git clone https://gitlab.engr.illinois.edu/gemillins/POLARIS_GEM_e2.git src/POLARIS_GEM_e2
+
+# Install dependencies using rosdep in the workspace
+RUN . /opt/ros/noetic/setup.sh && \
+    rosdep install --from-paths src --ignore-src -r -y
 
 # Build the Catkin workspace
-WORKDIR $GEM_WS
 RUN . /opt/ros/noetic/setup.sh && \
     catkin_make
 
 # Source the workspace setup file after build
 RUN echo "source /opt/ros/noetic/setup.sh" >> ~/.bashrc && \
-    echo "source $GEM_WS/devel/setup.bash" >> ~/.bashrc
+    echo "source /root/gem_ws/devel/setup.bash" >> ~/.bashrc
 
 # Set the default command to bash, so the container is ready for manual interaction
 CMD ["bash"]

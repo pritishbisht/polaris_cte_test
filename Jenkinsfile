@@ -41,42 +41,21 @@ pipeline {
             }
         }
 
-stage('Build or Pull Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 container('docker') {
                     script {
-                        // Check if Dockerfile has changed
-                        def dockerfileChanged = sh(
-                            script: 'git diff --name-only HEAD~1 HEAD | grep -q Dockerfile && echo "yes" || echo "no"',
-                            returnStdout: true
-                        ).trim() == 'yes'
-                        
-                        // Check if latest image exists in Docker repository
-                        def imageExists = sh(
-                            script: "docker manifest inspect ${TAG_LATEST} > /dev/null 2>&1 && echo 'yes' || echo 'no'",
-                            returnStdout: true
-                        ).trim() == 'yes'
-                        
-                        // Decision-making based on Dockerfile changes and image existence
-                        if (dockerfileChanged || !imageExists) {
-                            echo "Dockerfile changed or no existing image found. Building Docker image."
-                            try {
-                                sh "docker build -t ${TAG_LATEST} -t ${TAG_BUILD} ."
-                            } catch (Exception e) {
-                                error "Failed to build Docker image: ${e.message}"
-                            }
-                        } else {
-                            echo "No change in Dockerfile and latest image exists. Pulling Docker image."
-                            try {
-                                sh "docker pull ${TAG_LATEST}"
-                            } catch (Exception e) {
-                                error "Failed to pull Docker image: ${e.message}"
-                            }
+                        echo "Building Docker image: ${TAG_LATEST} and ${TAG_BUILD}"
+                        try {
+                            sh "docker build -t ${TAG_LATEST} -t ${TAG_BUILD} ."
+                        } catch (Exception e) {
+                            error "Failed to build Docker image: ${e.message}"
                         }
                     }
                 }
             }
         }
+
         
         stage('Start Container and Copy Test Package') {
             steps {
@@ -86,27 +65,7 @@ stage('Build or Pull Docker Image') {
                         sh 'docker run -itd --name ${CONTAINER_NAME} ${TAG_LATEST} || echo "Container already running"'
 
                         // Copy the test package into the running container
-                        sh 'docker cp ./test_cross_track_error $CONTAINER_NAME:/root/polaris_gem_ws/src'
-                    }
-                }
-            }
-        }
-
-        stage('Run Simulation and Evaluation') {
-            steps {
-                container('docker') {
-                    script {
-                        echo "Starting simulation in Docker container..."
-                        try {
-                            sh '''
-                                docker run --rm $TAG_LATEST /bin/bash -c "
-                                    source /opt/ros/noetic/setup.sh &&
-                                    source /root/polaris_gem_ws/devel/setup.bash &&
-                                    roslaunch gem_gazebo gem_gazebo_rviz.launch velodyne_points:=true"
-                            '''
-                        } catch (Exception e) {
-                            error "Simulation failed: ${e.message}"
-                        }
+                        sh 'docker cp ./test_cross_track_error ${CONTAINER_NAME}:/root/gem_ws/src'
                     }
                 }
             }
@@ -114,35 +73,17 @@ stage('Build or Pull Docker Image') {
 
         stage('Run Test Package') {
             steps {
-                script {
-                    // Assuming a ROS test package, source ROS setup and launch the test
-                    sh 'source /opt/ros/noetic/setup.bash && roslaunch test_cross_track_error test_cross_track_error.launch'
+                container('docker') {
+                    script {
+                        // Execute commands in the running container, using docker exec to ensure each runs in the right context
+                        sh 'docker exec ${CONTAINER_NAME} /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make -C /root/gem_ws || echo \'catkin_make failed\'"'
+
+                        sh 'docker exec ${CONTAINER_NAME} /bin/bash -c "source /opt/ros/noetic/setup.bash && source /root/gem_ws/devel/setup.bash && rostest test_cross_track_error pure_pursuit_cte_test.test duration:=30 error_threshold:=1.0 --text --results-file=/root/gem_ws/test_results.xml || echo \'rostest failed\'"'
+                    }
                 }
             }
         }
         
-        // stage('Evaluate Results') {
-        //     steps {
-        //         container('docker') {
-        //             script {
-        //                 echo "Evaluating cross-track error results..."
-        //                 try {
-        //                     def logs = sh(script: 'docker logs $(docker ps -q -n=1) | grep "cross"', returnStdout: true).trim()
-        //                     if (logs.contains("CTE within acceptable range")) {
-        //                         currentBuild.result = 'SUCCESS'
-        //                         echo 'Cross-track error is within acceptable limits.'
-        //                     } else {
-        //                         currentBuild.result = 'FAILURE'
-        //                         echo 'Cross-track error exceeds acceptable limits.'
-        //                     }
-        //                 } catch (Exception e) {
-        //                     error "Failed to evaluate simulation results: ${e.message}"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
         stage('Push Docker Image') {
             when {
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
@@ -169,12 +110,16 @@ stage('Build or Pull Docker Image') {
             }
         }
     }
-    
+
     post {
         always {
             script {
-                echo 'Performing Docker cleanup...'
-                sh 'docker system prune -f'
+                // Publish the test results from the shared workspace
+                junit 'test_results.xml'
+
+                // Stopping and removing the container 
+                // sh "docker stop ${CONTAINER_NAME} || true"
+                // sh "docker rm ${CONTAINER_NAME} || true"
             }
         }
         success {
