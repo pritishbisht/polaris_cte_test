@@ -20,21 +20,23 @@ RUN apt-get update && \
         ros-noetic-jsk-rviz-plugins \
         ros-noetic-ros-control \
         ros-noetic-ros-controllers \
-        ros-noetic-velodyne-simulator && \
-    rm -rf /var/lib/apt/lists/*
-
+        ros-noetic-velodyne-simulator 
+        
 # Initialize rosdep and create Catkin workspace
 RUN rosdep init && \
     rosdep update && \
     mkdir -p /root/gem_ws/src
+
 WORKDIR /root/gem_ws
 
 # Clone the POLARIS_GEM_e2 repository
 RUN git clone https://gitlab.engr.illinois.edu/gemillins/POLARIS_GEM_e2.git src/POLARIS_GEM_e2
 
-# Install dependencies using rosdep in the workspace
-RUN . /opt/ros/noetic/setup.sh && \
-    rosdep install --from-paths src --ignore-src -r -y
+# Install dependencies using rosdep
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && rosdep install --from-paths src --ignore-src -r -y"
+
+# Clean up apt cache
+RUN rm -rf /var/lib/apt/lists/*
 
 # Build the Catkin workspace
 RUN . /opt/ros/noetic/setup.sh && \
