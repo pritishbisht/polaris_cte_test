@@ -32,7 +32,7 @@ WORKDIR /root/gem_ws
 # Clone the POLARIS_GEM_e2 repository
 RUN git clone https://gitlab.engr.illinois.edu/gemillins/POLARIS_GEM_e2.git src/POLARIS_GEM_e2
 
-# Install dependencies using rosdep
+# Install project dependencies using rosdep
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && rosdep install --from-paths src --ignore-src -r -y"
 
 # Clean up apt cache
